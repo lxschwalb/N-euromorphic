@@ -1,0 +1,59 @@
+{
+  "slug": "N_Euromorphic",
+  "name": "N-Euromorphic",
+  "version": "2.0.0",
+  "license": "CC",
+  "brand": "N-Euromorphic",
+  "author": "Tone Age Technology",
+  "authorEmail": "toneagetechnology@gmail.com",
+  "authorUrl": "",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "LIF",
+      "name": "LIF",
+      "description": "Leaky integrate and fire neuron",
+      "tags": []
+    },
+    {
+      "slug": "PolyProbe",
+      "name": "PolyProbe",
+      "description": "Convert spikes to polyphonic musical notes",
+      "tags": []
+    },
+    {
+      "slug": "8LIF",
+      "name": "8LIF",
+      "description": "8 Leaky Integrate and Fire Neurons",
+      "tags": []
+    },
+    {
+      "slug": "Cochlea",
+      "name": "Cochlea",
+      "description": "Audio filterbank with spike output",
+      "tags": []
+    },
+    {
+      "slug": "CV2ISI",
+      "name": "CV2ISI",
+      "description": "Convert CV to Inter Spike Intervals",
+      "tags": []
+    },
+    {
+      "slug": "ISI2CV",
+      "name": "ISI2CV",
+      "description": "Convert Inter Spike Intervals to CV",
+      "tags": []
+    },
+    {
+      "slug": "Reservoir",
+      "name": "Reservoir",
+      "description": "Reservoir computing with 8 input and 8 output neurons exposed",
+      "tags": []
+    }
+  ]
+}
