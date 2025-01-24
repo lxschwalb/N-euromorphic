@@ -1,12 +1,7 @@
 #include "plugin.hpp"
 #include "NeuronConstants.hpp"
 #include <algorithm>
-#include <thread>
-#include <mutex>
-
-std::mutex m;
-
-rfft = rack::dsp::RealFFT(1024);
+#include <cmath>
 
 const float hamming[1024] = {0.08, 0.08000868, 0.0800347, 0.08007808, 0.08013881, 0.08021689, 0.08031231, 0.08042507, 0.08055517, 0.0807026,
        						0.08086736, 0.08104944, 0.08124883, 0.08146552, 0.08169951, 0.08195079, 0.08221935, 0.08250518, 0.08280827, 0.0831286,
@@ -111,6 +106,7 @@ const float hamming[1024] = {0.08, 0.08000868, 0.0800347, 0.08007808, 0.08013881
 							0.08458215, 0.08419296, 0.08382096, 0.08346617, 0.0831286 , 0.08280827, 0.08250518, 0.08221935, 0.08195079, 0.08169951,
 							0.08146552, 0.08124883, 0.08104944, 0.08086736, 0.0807026 , 0.08055517, 0.08042507, 0.08031231, 0.08021689, 0.08013881,
 							0.08007808, 0.0800347 , 0.08000868, 0.08};
+const float notefreqs[144] = {27.500000, 28.305812, 29.135235, 29.988963, 30.867706, 31.772199, 32.703196, 33.661472, 34.647829, 35.663088, 36.708096, 37.783725, 38.890873, 40.030463, 41.203445, 42.410798, 43.653529, 44.932675, 46.249303, 47.604511, 48.999429, 50.435222, 51.913087, 53.434257, 55.000000, 56.611623, 58.270470, 59.977925, 61.735413, 63.544398, 65.406391, 67.322945, 69.295658, 71.326176, 73.416192, 75.567451, 77.781746, 80.060925, 82.406889, 84.821595, 87.307058, 89.865350, 92.498606, 95.209022, 97.998859, 100.870445, 103.826174, 106.868514, 110.000000, 113.223246, 116.540940, 119.955851, 123.470825, 127.088797, 130.812783, 134.645890, 138.591315, 142.652351, 146.832384, 151.134901, 155.563492, 160.121850, 164.813778, 169.643191, 174.614116, 179.730700, 184.997211, 190.418043, 195.997718, 201.740890, 207.652349, 213.737027, 220.000000, 226.446492, 233.081881, 239.911701, 246.941651, 254.177593, 261.625565, 269.291780, 277.182631, 285.304702, 293.664768, 302.269802, 311.126984, 320.243700, 329.627557, 339.286382, 349.228231, 359.461400, 369.994423, 380.836087, 391.995436, 403.481779, 415.304698, 427.474054, 440.000000, 452.892984, 466.163762, 479.823402, 493.883301, 508.355187, 523.251131, 538.583559, 554.365262, 570.609404, 587.329536, 604.539605, 622.253967, 640.487400, 659.255114, 678.572763, 698.456463, 718.922799, 739.988845, 761.672174, 783.990872, 806.963558, 830.609395, 854.948108, 880.000000, 905.785968, 932.327523, 959.646805, 987.766603, 1016.710373, 1046.502261, 1077.167118, 1108.730524, 1141.218808, 1174.659072, 1209.079210, 1244.507935, 1280.974801, 1318.510228, 1357.145526, 1396.912926, 1437.845599, 1479.977691, 1523.344347, 1567.981744, 1613.927116, 1661.218790, 1709.896216};
 
 struct Cochlea : Module {
 	enum ParamId {
@@ -124,66 +120,6 @@ struct Cochlea : Module {
 		INPUTS_LEN
 	};
 	enum OutputId {
-		A5_OUTPUT,
-		BB5_OUTPUT,
-		B5_OUTPUT,
-		C5_OUTPUT,
-		DB5_OUTPUT,
-		D5_OUTPUT,
-		EB5_OUTPUT,
-		E5_OUTPUT,
-		F5_OUTPUT,
-		GB5_OUTPUT,
-		G5_OUTPUT,
-		AB5_OUTPUT,
-		A4_OUTPUT,
-		BB4_OUTPUT,
-		B4_OUTPUT,
-		C4_OUTPUT,
-		DB4_OUTPUT,
-		D4_OUTPUT,
-		EB4_OUTPUT,
-		E4_OUTPUT,
-		F4_OUTPUT,
-		GB4_OUTPUT,
-		G4_OUTPUT,
-		AB4_OUTPUT,
-		A3_OUTPUT,
-		BB3_OUTPUT,
-		B3_OUTPUT,
-		C3_OUTPUT,
-		DB3_OUTPUT,
-		D3_OUTPUT,
-		EB3_OUTPUT,
-		E3_OUTPUT,
-		F3_OUTPUT,
-		GB3_OUTPUT,
-		G3_OUTPUT,
-		AB3_OUTPUT,
-		A2_OUTPUT,
-		BB2_OUTPUT,
-		B2_OUTPUT,
-		C2_OUTPUT,
-		DB2_OUTPUT,
-		D2_OUTPUT,
-		EB2_OUTPUT,
-		E2_OUTPUT,
-		F2_OUTPUT,
-		GB2_OUTPUT,
-		G2_OUTPUT,
-		AB2_OUTPUT,
-		A1_OUTPUT,
-		BB1_OUTPUT,
-		B1_OUTPUT,
-		C1_OUTPUT,
-		DB1_OUTPUT,
-		D1_OUTPUT,
-		EB1_OUTPUT,
-		E1_OUTPUT,
-		F1_OUTPUT,
-		GB1_OUTPUT,
-		G1_OUTPUT,
-		AB1_OUTPUT,
 		A0_OUTPUT,
 		BB0_OUTPUT,
 		B0_OUTPUT,
@@ -196,18 +132,83 @@ struct Cochlea : Module {
 		GB0_OUTPUT,
 		G0_OUTPUT,
 		AB0_OUTPUT,
+		A1_OUTPUT,
+		BB1_OUTPUT,
+		B1_OUTPUT,
+		C1_OUTPUT,
+		DB1_OUTPUT,
+		D1_OUTPUT,
+		EB1_OUTPUT,
+		E1_OUTPUT,
+		F1_OUTPUT,
+		GB1_OUTPUT,
+		G1_OUTPUT,
+		AB1_OUTPUT,
+		A2_OUTPUT,
+		BB2_OUTPUT,
+		B2_OUTPUT,
+		C2_OUTPUT,
+		DB2_OUTPUT,
+		D2_OUTPUT,
+		EB2_OUTPUT,
+		E2_OUTPUT,
+		F2_OUTPUT,
+		GB2_OUTPUT,
+		G2_OUTPUT,
+		AB2_OUTPUT,		
+		A3_OUTPUT,
+		BB3_OUTPUT,
+		B3_OUTPUT,
+		C3_OUTPUT,
+		DB3_OUTPUT,
+		D3_OUTPUT,
+		EB3_OUTPUT,
+		E3_OUTPUT,
+		F3_OUTPUT,
+		GB3_OUTPUT,
+		G3_OUTPUT,
+		AB3_OUTPUT,
+		A4_OUTPUT,
+		BB4_OUTPUT,
+		B4_OUTPUT,
+		C4_OUTPUT,
+		DB4_OUTPUT,
+		D4_OUTPUT,
+		EB4_OUTPUT,
+		E4_OUTPUT,
+		F4_OUTPUT,
+		GB4_OUTPUT,
+		G4_OUTPUT,
+		AB4_OUTPUT,
+		A5_OUTPUT,
+		BB5_OUTPUT,
+		B5_OUTPUT,
+		C5_OUTPUT,
+		DB5_OUTPUT,
+		D5_OUTPUT,
+		EB5_OUTPUT,
+		E5_OUTPUT,
+		F5_OUTPUT,
+		GB5_OUTPUT,
+		G5_OUTPUT,
+		AB5_OUTPUT,
 		OUTPUTS_LEN
 	};
 	enum LightId {
 		LIGHTS_LEN
 	};
 
-	int buff_counter = 0;
-	static const int buff_len = 1024;
-	float buff[buff_len];
-	float mems[OUTPUTS_LEN];
+	static constexpr int BUFFER_LEN = 1024;
 
-	Cochlea() {
+	alignas(16) float inputBuffer[BUFFER_LEN] = {};
+	alignas(16) float fftBuffer[BUFFER_LEN * 2];
+	alignas(16) float freqBuffer[BUFFER_LEN] = {};
+	float mems[OUTPUTS_LEN] = {};
+	int frame = 0;
+	dsp::RealFFT fft;
+	int subsamplecounter = 0;
+
+	Cochlea() : fft(BUFFER_LEN) {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configParam(REF_PARAM, 0.f, 1.f, 0.f, "Refractory Period");
 		configParam(RESP_PARAM, 1, 3, 2, "Responsiveness", "", 0.f);
@@ -287,39 +288,52 @@ struct Cochlea : Module {
 		configOutput(AB0_OUTPUT, "Ab0");
 	}
 
-	static void calculate_mems (float buff[buff_len]) { 
-		float local_buff[buff_len];
-
-		// Hamming window
-		for (int i = 0; i < buff_len; i++)
-		{
-			local_buff[i] = buff[i] * hamming[i];
-		}
-		
-		// Power spectrum
-		rfft.rfft()
-
-		// Filter Banks
-		m.lock();
-		//modify mems
-		m.unlock();
-	}
-
 	void process(const ProcessArgs& args) override {
-		buff[buff_counter++] = inputs[AUDIO_INPUT].getVoltage();
-
-		if (buff_counter == buff_len)
+		if (++subsamplecounter >= 8)
 		{
-			buff_counter = 0;
-			std::thread thred(calculate_mems, buff);
-			thred.detach();
-		}
+			subsamplecounter=0;
 		
+			inputBuffer[frame] = inputs[AUDIO_INPUT].getVoltage();
 
-		m.lock();
-		//modify mems
-		m.unlock();
+			if (++frame >= BUFFER_LEN) {
+				frame = 0;
 
+				for (int i = 0; i < BUFFER_LEN; i++)
+				{
+					inputBuffer[i] *= hamming[i];
+				}
+				
+				fft.rfft(inputBuffer, fftBuffer);
+				
+				for (int i = 0; i < OUTPUTS_LEN; i++)
+				{
+					mems[i]=0;
+				}
+
+				for (int i = 0; i < BUFFER_LEN; i++)
+				{
+					float f = args.sampleRate/8/BUFFER_LEN*i;
+
+					if (notefreqs[0]<f && f<notefreqs[OUTPUTS_LEN*2-1])
+					{
+						float spec = sqrt(fftBuffer[i*2]*fftBuffer[i*2]+fftBuffer[i*2+1]*fftBuffer[i*2+1]);
+
+						for (int j = 1; j < OUTPUTS_LEN*2; j++)
+						{
+							if (notefreqs[j-1]<=f && f<=notefreqs[j])
+							{
+								mems[j/2]+=spec;
+							}
+						}
+						
+					}
+				}
+				for (int i = 0; i < OUTPUTS_LEN; i++)
+				{
+					outputs[i].setVoltage(mems[i]/10);
+				}
+			}
+		}
 	}
 };
 
