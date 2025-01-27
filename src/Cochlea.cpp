@@ -8,7 +8,7 @@ const float notefreqs[74] = {25.956544, 27.500000, 29.135235, 30.867706, 32.7031
 struct Cochlea : Module {
 	enum ParamId {
 		REF_PARAM,
-		RESP_PARAM,
+		LEAK_PARAM,
 		SENS_PARAM,
 		PARAMS_LEN
 	};
@@ -104,12 +104,13 @@ struct Cochlea : Module {
 	int frame = 0;
 	dsp::RealFFT fft;
 	int subsamplecounter = 0;
+	int ref_timer[OUTPUTS_LEN] = {0};
 	dsp::PulseGenerator fire[OUTPUTS_LEN];
 
 	Cochlea() : fft(BUFFER_LEN) {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		configParam(REF_PARAM, 0.f, 1.f, 0.f, "Refractory Period");
-		configParam(RESP_PARAM, 0.f, 5.f, 0.f, "Responsiveness");
+		configParam(LEAK_PARAM, 0.f, 5.f, 0.f, "Leakage");
 		configParam(SENS_PARAM, 0.f, 1.f, 0.5f, "Sensitivity");
 		configInput(AUDIO_INPUT, "Audio In");
 		configOutput(A5_OUTPUT, "A5");
@@ -220,15 +221,23 @@ struct Cochlea : Module {
 			}
 			
 			for (int i = 0; i < OUTPUTS_LEN; i++)
-				if(outputs[i].isConnected()){
-					mems[i] -= params[RESP_PARAM].getValue() * args.sampleTime * 32;
+			{
+				if (ref_timer[i] > 0)
+				{
+					ref_timer[i]-=8;
+				}
+				else if(outputs[i].isConnected())
+				{
+					mems[i] -= params[LEAK_PARAM].getValue() * args.sampleTime * 32;
 					mems[i] = mems[i] < V_RST ? V_RST: mems[i];
 					if (mems[i] > V_THR) // SPIKE!
 					{
+						ref_timer[i] = params[REF_PARAM].getValue() * args.sampleRate;
 						mems[i] = V_RST;
 						fire[i].trigger(1e-3);
 					}
 				}
+			}
 		}
 	}
 };
@@ -244,7 +253,7 @@ struct CochleaWidget : ModuleWidget {
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
 		addParam(createParamCentered<RoundSmallBlackKnob>(mm2px(Vec(18.5, 96.0)), module, Cochlea::REF_PARAM));
-		addParam(createParamCentered<RoundSmallBlackKnob>(mm2px(Vec(18.5, 106.0)), module, Cochlea::RESP_PARAM));
+		addParam(createParamCentered<RoundSmallBlackKnob>(mm2px(Vec(18.5, 106.0)), module, Cochlea::LEAK_PARAM));
 		addParam(createParamCentered<RoundSmallBlackKnob>(mm2px(Vec(18.5, 116.0)), module, Cochlea::SENS_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(6.5, 106.0)), module, Cochlea::AUDIO_INPUT));
