@@ -94,7 +94,7 @@ struct PolyProbe : Module {
 
 	int poly_track = 0;
 	bool risen[INPUTS_LEN] = {false};
-	dsp::PulseGenerator trig;
+	dsp::PulseGenerator trig[16];
 
 	PolyProbe() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -177,7 +177,11 @@ struct PolyProbe : Module {
 
 	void process(const ProcessArgs& args) override {
 		int num_channels = params[POLY_PARAM].getValue();
-		outputs[TRIG_OUTPUT].setVoltage(trig.process(args.sampleTime) ? 10.f : 0.f, poly_track);
+		for (int i = 0; i < num_channels; i++)
+		{
+			outputs[TRIG_OUTPUT].setVoltage(trig[i].process(args.sampleTime) ? 10.f : 0.f, i);
+		}
+		
 
 		for (int i = 0; i < INPUTS_LEN; i++)
 		{
@@ -187,7 +191,7 @@ struct PolyProbe : Module {
 				{
 					if (!risen[i]) {
 						outputs[V_OCT_OUTPUT].setVoltage((i-27)/12.f, poly_track);
-						trig.trigger(1e-3);
+						trig[poly_track].trigger(1e-3);
 						poly_track++;
 						poly_track %= num_channels;
 						risen[i] = true;
