@@ -16,6 +16,7 @@ struct Reservoir : Module {
 		APPLY_PARAM,
 		D_VAR_PARAM,
 		D_AVG_PARAM,
+		NEURON_OFFSET_PARAM,
 		PARAMS_LEN
 	};
 	enum InputId {
@@ -63,6 +64,7 @@ struct Reservoir : Module {
 		configParam(W_VAR_PARAM, 0.f, 0.3f, 0.f, ""); // weights
 		configParam(W_AVG_PARAM, -0.3f, 0.3f, 0.f, "");
 		configParam(NUM_NEURONS_PARAM, 8, 256, 8, "");
+		configParam(NEURON_OFFSET_PARAM, 0, 248, 0, "");
 		configParam(DIST_PARAM, 0.f, 1.f, 0.f, ""); // gaussian vs uniform
 		configParam(L_VAR_PARAM, 0.f, 1.f, 0.f, ""); // leakage
 		configParam(L_AVG_PARAM, 0.f, 0.15f, 0.f, "");
@@ -125,6 +127,8 @@ struct Reservoir : Module {
 			}
 		}
 
+		int neuron_offset = params[NEURON_OFFSET_PARAM].getValue();
+
 		for (int h = 0; h < num_neurons; h++) // process each neuron
 		{
 			spiking[h] = false;
@@ -135,33 +139,33 @@ struct Reservoir : Module {
 				{
 					deqlay[h].erase(deqlay[h].begin() + i);
 					spiking[h] = true;
-					if (h<8)
+					if (h >= neuron_offset && h < neuron_offset + 8)
 					{
-						fire[h].trigger(1e-3);
+						fire[h-neuron_offset].trigger(1e-3);
 					}
 				}
 			}
 
-			if(h<8)
+			if(h >= neuron_offset && h < neuron_offset + 8)
 			{
-				float in_v = inputs[h].isConnected() ?
-							 inputs[h].getVoltage()  :
+				float in_v = inputs[h-neuron_offset].isConnected() ?
+							 inputs[h-neuron_offset].getVoltage()  :
 							 0;
 			
 				if (in_v > V_THR) // Immediately fire on positive edge on input
 				{
-					if (!risen[h]) {
-						risen[h] = true;
+					if (!risen[h-neuron_offset]) {
+						risen[h-neuron_offset] = true;
 						spiking[h] = true;
-						fire[h].trigger(1e-3);
+						fire[h-neuron_offset].trigger(1e-3);
 					}
 				}
 				else {
-					risen[h] = false;
+					risen[h-neuron_offset] = false;
 				}
 
 				// for the first 8 neurons, output their spikes
-				outputs[h].setVoltage(fire[h].process(args.sampleTime) ? SPIKE_MAG : V_RST);
+				outputs[h-neuron_offset].setVoltage(fire[h-neuron_offset].process(args.sampleTime) ? SPIKE_MAG : V_RST);
 			}
 
 			if (ref_timer[h] > 0) // wait out refractory period
@@ -214,6 +218,7 @@ struct ReservoirWidget : ModuleWidget {
 		addParam(createParamCentered<RoundSmallBlackKnob>(mm2px(Vec(60.5, 108.0)), module, Reservoir::R_AVG_PARAM));
 		addParam(createParamCentered<RoundSmallBlackKnob>(mm2px(Vec(80.5, 118.0)), module, Reservoir::D_VAR_PARAM));
 		addParam(createParamCentered<RoundSmallBlackKnob>(mm2px(Vec(80.5, 108.0)), module, Reservoir::D_AVG_PARAM));
+		addParam(createParamCentered<RoundBlackSnapKnob>(mm2px(Vec(37.5, 46)), module, Reservoir::NEURON_OFFSET_PARAM));
 		addParam(createParamCentered<BefacoPush>(mm2px(Vec(50.5, 63.5)), module, Reservoir::APPLY_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(10.5, 28.5)), module, Reservoir::IN1_INPUT));
