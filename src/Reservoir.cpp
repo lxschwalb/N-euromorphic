@@ -61,18 +61,18 @@ struct Reservoir : Module {
 
 	Reservoir() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(W_VAR_PARAM, 0.f, 0.3f, 0.f, ""); // weights
+		configParam(W_VAR_PARAM, 0.f, 0.3f, 0.3f, ""); // weights
 		configParam(W_AVG_PARAM, -0.3f, 0.3f, 0.f, "");
 		configParam(NUM_NEURONS_PARAM, 8, 256, 8, "");
 		configParam(NEURON_OFFSET_PARAM, 0, 248, 0, "");
 		configParam(DIST_PARAM, 0.f, 1.f, 0.f, ""); // gaussian vs uniform
 		configParam(L_VAR_PARAM, 0.f, 1.f, 0.f, ""); // leakage
-		configParam(L_AVG_PARAM, 0.f, 0.15f, 0.f, "");
+		configParam(L_AVG_PARAM, 0.f, 0.15f, 0.15f, "");
 		configParam(R_VAR_PARAM, 0.f, 1.f, 0.f, ""); // ref period
-		configParam(R_AVG_PARAM, 0.f, 1.f, 0.f, "");
+		configParam(R_AVG_PARAM, 0.f, 1.f, 1.f, "");
 		configParam(APPLY_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(D_VAR_PARAM, 0.f, 1.f, 0.f, ""); // delay
-		configParam(D_AVG_PARAM, 0.f, 1.f, 0.f, "");
+		configParam(D_VAR_PARAM, 0.f, 1.f, 1.f, ""); // delay
+		configParam(D_AVG_PARAM, 0.f, 1.f, 1.f, "");
 		configInput(IN1_INPUT, "");
 		configInput(IN2_INPUT, "");
 		configInput(IN3_INPUT, "");
@@ -121,9 +121,9 @@ struct Reservoir : Module {
 				{
 					weights[i][j] = myrandom(w_avg, w_var, dist);
 				}
-				leakages[i] 	= myrandom(l_avg, l_var, dist, true);
-				ref_periods[i] 	= myrandom(r_avg, r_var, dist, true);
-				delays[i] 		= myrandom(d_avg, d_var, dist, true);
+				leakages[i] 	= myrandom(l_avg, l_var, dist, true) * args.sampleTime;
+				ref_periods[i] 	= myrandom(r_avg, r_var, dist, true) * args.sampleRate;
+				delays[i] 		= myrandom(d_avg, d_var, dist, true) * args.sampleRate;
 			}
 		}
 
@@ -183,14 +183,14 @@ struct Reservoir : Module {
 					[](bool spike, float weight) { return spike ? weight : 0.0f; }
 				);
 
-				mem[h] -= leakages[h] * args.sampleTime;
+				mem[h] -= leakages[h];
 				mem[h] = mem[h] < V_RST ? V_RST: mem[h];
 
 				if (mem[h] > V_THR) // SPIKE!
 				{
 					mem[h] = V_RST;
-					ref_timer[h] = ref_periods[h] * args.sampleRate;
-					deqlay[h].push_back(delays[h] * args.sampleRate);
+					ref_timer[h] = ref_periods[h];
+					deqlay[h].push_back(delays[h]);
 				}
 			}
 		}		

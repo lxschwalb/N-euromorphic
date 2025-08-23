@@ -52,7 +52,13 @@
     {
       "slug": "Reservoir",
       "name": "Reservoir",
-      "description": "Reservoir computing with 8 input and 8 output neurons exposed",
+      "description": "Reservoir computing with 8 neurons exposed",
+      "tags": []
+    },
+    {
+      "slug": "ReservoirPlus",
+      "name": "ReservoirPlus",
+      "description": "Reservoir computing with 8 neurons exposed. More realistic delays at the cost of higher cpu usage",
       "tags": []
     }
   ]

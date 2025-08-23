@@ -16,3 +16,4 @@ extern Model* modelCochlea;
 extern Model* modelCV2ISI;
 extern Model* modelISI2CV;
 extern Model* modelReservoir;
+extern Model* modelReservoirPlus;
